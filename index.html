@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no, viewport-fit=cover">
+    <title>生日快乐 · 烟花为你绽放</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #0b0e1a, #03040c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            overflow: hidden;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* 画布占满全屏，用于烟花效果 */
+        .canvas-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* 让点击穿透到文字层（如果有交互需要） */
+        }
+
+        /* 蛋糕与文字容器 —— 位于烟花之上 */
+        .content {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100vh;
+            padding: 16px;
+            pointer-events: none; /* 不干扰烟花层，但文字可选 */
+        }
+
+        /* 生日蛋糕 —— 纯 CSS 绘制 */
+        .cake {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+            animation: cakeGlow 3s infinite alternate;
+            transition: opacity 1.2s ease, transform 1.2s ease;
+            opacity: 0;
+            transform: scale(0.7);
+            pointer-events: none;
+        }
+
+        .cake.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 蛋糕主体 */
+        .cake-base {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 60px;
+            background: linear-gradient(180deg, #f9e1b0, #d4a373);
+            border-radius: 12px 12px 18px 18px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), inset 0 2px 8px rgba(255, 255, 220, 0.8);
+            border-bottom: 3px solid #b07d4b;
+        }
+
+        /* 中间奶油层 */
+        .cake-middle {
+            position: absolute;
+            bottom: 52px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 40px;
+            background: linear-gradient(180deg, #fff2d8, #f5dbb1);
+            border-radius: 20px 20px 12px 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 2px 12px #fff6e5;
+            border-bottom: 2px solid #dbbd8c;
+        }
+
+        /* 上层奶油 */
+        .cake-top {
+            position: absolute;
+            bottom: 86px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 40px;
+            background: linear-gradient(180deg, #fff9ef, #f0d5aa);
+            border-radius: 40px 40px 16px 16px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 4px 12px #fffcf0;
+        }
+
+        /* 蜡烛 */
+        .candle {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 40px;
+            background: linear-gradient(180deg, #ff6b6b, #cc3b3b);
+            border-radius: 6px 6px 2px 2px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+            z-index: 5;
+        }
+
+        /* 火焰 */
+        .flame {
+            position: absolute;
+            bottom: 158px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 16px;
+            height: 24px;
+            background: radial-gradient(circle at 50% 20%, #ffd966, #ffaa33, #ff5500);
+            border-radius: 50% 50% 30% 30% / 60% 60% 20% 20%;
+            filter: blur(1px);
+            box-shadow: 0 0 20px #ffaa33, 0 0 40px #ff7700;
+            animation: flicker 0.15s infinite alternate;
+            z-index: 6;
+        }
+
+        /* 装饰小糖粒 */
+        .sprinkles {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 30px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .sprinkles span {
+            width: 6px;
+            height: 6px;
+            border-radius: 2px;
+            background: #ffcf8a;
+            opacity: 0.9;
+            box-shadow: 0 0 6px #ffb347;
+        }
+
+        .sprinkles span:nth-child(2) { background: #ff8a8a; }
+        .sprinkles span:nth-child(3) { background: #b0e0ff; }
+        .sprinkles span:nth-child(4) { background: #a8e6a8; }
+        .sprinkles span:nth-child(5) { background: #ffb3d9; }
+        .sprinkles span:nth-child(6) { background: #fff1b0; }
+
+        /* 生日祝福文字 —— 烟花结束后出现 */
+        .birthday-message {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-align: center;
+            color: #fff4d6;
+            text-shadow: 0 0 20px #ff9f4b, 0 0 40px #ff6b00, 0 0 80px #ff3c00;
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 1.8s ease, transform 1.8s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            margin-top: 20px;
+            padding: 10px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
+            border-radius: 60px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .birthday-message.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 名字可以留空由你们自己填写，但为了效果这里放一个占位 */
+        .name-placeholder {
+            color: #ffeaa6;
+        }
+
+        /* 小爱心点缀 */
+        .heart {
+            position: absolute;
+            font-size: 1.5rem;
+            opacity: 0.8;
+            animation: floatUp 4s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 20;
+            filter: drop-shadow(0 0 8px #ff7b9c);
+        }
+
+        /* 动画定义 */
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1); opacity: 1; }
+            100% { transform: translateX(-50%) scale(1.1); opacity: 0.95; }
+        }
+
+        @keyframes cakeGlow {
+            0% { filter: drop-shadow(0 0 10px rgba(255, 200, 100, 0.5)); }
+            100% { filter: drop-shadow(0 0 30px rgba(255, 170, 50, 0.9)); }
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+            50% { transform: translateY(-30px) rotate(10deg); opacity: 1; }
+            100% { transform: translateY(-60px) rotate(0deg); opacity: 0; }
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .cake {
+                width: 170px;
+                height: 170px;
+            }
+            .cake-base { width: 140px; height: 52px; }
+            .cake-middle { width: 120px; height: 34px; bottom: 46px; }
+            .cake-top { width: 94px; height: 34px; bottom: 74px; }
+            .candle { bottom: 104px; height: 34px; width: 10px; }
+            .flame { bottom: 138px; width: 14px; height: 20px; }
+            .sprinkles { width: 110px; bottom: 26px; }
+            .birthday-message {
+                font-size: 1.6rem;
+                white-space: normal;
+                padding: 8px 14px;
+                border-radius: 40px;
+                line-height: 1.4;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 烟花画布 -->
+    <div class="canvas-wrapper">
+        <canvas id="fireworksCanvas"></canvas>
+    </div>
+
+    <!-- 主内容：蛋糕 + 祝福语 -->
+    <div class="content">
+        <!-- 生日蛋糕 -->
+        <div class="cake" id="cake">
+            <!-- 蛋糕底座 -->
+            <div class="cake-base"></div>
+            <!-- 中层 -->
+            <div class="cake-middle"></div>
+            <!-- 上层 -->
+            <div class="cake-top"></div>
+            <!-- 蜡烛 -->
+            <div class="candle"></div>
+            <!-- 火焰 -->
+            <div class="flame"></div>
+            <!-- 装饰糖粒 -->
+            <div class="sprinkles">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <!-- 生日祝福语 (名字可自己改，替换 XXX 即可) -->
+        <div class="birthday-message" id="message">
+            <span class="name-placeholder">烁桐</span> Happy birthday to you.
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- 烟花效果 ----------
+            const canvas = document.getElementById('fireworksCanvas');
+            const ctx = canvas.getContext('2d');
+            let width, height;
+            let particles = [];
+            let animationFrameId = null;
+            let isActive = true;          // 烟花是否继续发射
+            let launchInterval = null;
+            let stopTime = null;
+
+            // 调整画布尺寸
+            function resizeCanvas() {
+                width = window.innerWidth;
+                height = window.innerHeight;
+                canvas.width = width;
+                canvas.height = height;
+            }
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+            });
+            resizeCanvas();
+
+            // 烟花粒子类
+            class Particle {
+                constructor(x, y, vx, vy, color, size = 2, life = 1.0, decay = 0.015) {
+                    this.x = x;
+                    this.y = y;
+                    this.vx = vx;
+                    this.vy = vy;
+                    this.color = color;
+                    this.size = size;
+                    this.life = life;         // 1 → 0
+                    this.decay = decay;
+                    this.gravity = 0.08;
+                    this.drag = 0.98;
+                }
+
+                update() {
+                    this.vx *= this.drag;
+                    this.vy *= this.drag;
+                    this.vy += this.gravity;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.life -= this.decay;
+                    if (this.life < 0) this.life = 0;
+                }
+
+                draw(ctx) {
+                    if (this.life <= 0.01) return;
+                    ctx.globalAlpha = this.life * 0.9;
+                    ctx.beginPath();
+                    // 根据生命周期调整大小
+                    const radius = this.size * (0.5 + this.life * 0.8);
+                    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = 12;
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset
+                }
+            }
+
+            // 生成一个烟花 (爆炸)
+            function createFirework(x, y) {
+                const particleCount = 60 + Math.floor(Math.random() * 40); // 60~100
+                const baseHue = Math.random() * 360;
+                const colorPalette = [
+                    `hsl(${baseHue}, 100%, 65%)`,
+                    `hsl(${(baseHue + 30) % 360}, 100%, 70%)`,
+                    `hsl(${(baseHue + 60) % 360}, 100%, 75%)`,
+                    `hsl(${(baseHue + 15) % 360}, 90%, 60%)`,
+                    `hsl(${(baseHue + 45) % 360}, 95%, 70%)`,
+                ];
+
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 5;
+                    const vx = Math.cos(angle) * speed * (0.8 + Math.random() * 0.5);
+                    const vy = Math.sin(angle) * speed * (0.8 + Math.random() * 0.5) - 1.2; // 微微向上
+                    const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                    const size = 1.5 + Math.random() * 2.5;
+                    const life = 0.8 + Math.random() * 0.4; // 0.8~1.2
+                    const decay = 0.008 + Math.random() * 0.012; // 不同衰减
+                    particles.push(new Particle(x, y, vx, vy, color, size, life, decay));
+                }
+
+                // 额外加一些白色小闪点
+                for (let i = 0; i < 15; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 1.5 + Math.random() * 4;
+                    const vx = Math.cos(angle) * speed * 0.8;
+                    const vy = Math.sin(angle) * speed * 0.8 - 1.0;
+                    particles.push(new Particle(x, y, vx, vy, '#fff9e6', 1.2, 1.0, 0.02));
+                }
+            }
+
+            // 随机生成烟花位置 (偏向中上部)
+            function randomFireworkPosition() {
+                const x = Math.random() * width * 0.8 + width * 0.1;
+                const y = Math.random() * height * 0.5 + height * 0.1;
+                return { x, y };
+            }
+
+            // 启动烟花循环
+            function startFireworks() {
+                if (!isActive) return;
+
+                // 每 300~600ms 发射一个烟花
+                const scheduleNext = () => {
+                    if (!isActive) return;
+                    const { x, y } = randomFireworkPosition();
+                    createFirework(x, y);
+                    launchInterval = setTimeout(scheduleNext, 250 + Math.random() * 400);
+                };
+                // 立即来几个烟花
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        if (isActive) {
+                            const { x, y } = randomFireworkPosition();
+                            createFirework(x, y);
+                        }
+                    }, i * 150);
+                }
+                scheduleNext();
+            }
+
+            // 动画绘制
+            function animate() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, width, height);
+                
+                // 更新并绘制所有粒子
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    p.update();
+                    p.draw(ctx);
+                    // 移除完全消失的粒子
+                    if (p.life <= 0.01 || p.x < -100 || p.x > width + 100 || p.y < -100 || p.y > height + 100) {
+                        particles.splice(i, 1);
+                    }
+                }
+
+                // 保持动画
+                animationFrameId = requestAnimationFrame(animate);
+            }
+
+            // 停止烟花发射 (但已存在的粒子继续完成)
+            function stopLaunchingFireworks() {
+                isActive = false;
+                if (launchInterval) {
+                    clearTimeout(launchInterval);
+                    launchInterval = null;
+                }
+                // 过一会停止动画，但保留粒子自然消失
+                // 我们会在烟花结束后显示文字，动画可以继续，但不再创建新粒子
+                // 为了性能，粒子全部消失后可以停止 RAF
+                const checkParticles = setInterval(() => {
+                    if (particles.length === 0) {
+                        if (animationFrameId) {
+                            cancelAnimationFrame(animationFrameId);
+                            animationFrameId = null;
+                        }
+                        clearInterval(checkParticles);
+                    }
+                }, 500);
+            }
+
+            // ---------- 控制蛋糕与文字出现顺序 ----------
+            const cakeEl = document.getElementById('cake');
+            const messageEl = document.getElementById('message');
+
+            // 显示蛋糕 (稍等片刻让页面加载)
+            setTimeout(() => {
+                cakeEl.classList.add('show');
+            }, 200);
+
+            // 开始烟花 (蛋糕出现后立刻开始)
+            setTimeout(() => {
+                // 先确保动画循环启动
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animate();
+                startFireworks();
+            }, 400);
+
+            // 烟花持续 5 秒左右，然后停止新烟花，等待粒子消失
+            // 在烟花结束的时候显示文字 (粒子差不多消失时)
+            setTimeout(() => {
+                // 停止发射新烟花
+                stopLaunchingFireworks();
+
+                // 等待粒子自然消失 (约2秒后显示文字，确保烟花效果基本结束)
+                setTimeout(() => {
+                    // 显示祝福文字
+                    messageEl.classList.add('show');
+
+                    // 可以加一点小爱心飘动 (可选，但已有烟花)
+                }, 1600); // 停止烟花后1.6秒显示文字，此时粒子几乎消失
+
+            }, 5200); // 烟花持续大约5.2秒
+
+            // 保证名字可自定义：如果你想把 "XXX" 改成朋友的名字，可以直接在 HTML 中修改，
+            // 或者通过 JS 动态设置。现在你也可以通过控制台改。
+            // 如果想用朋友的名字，可以取消下面注释并修改 '小可爱'
+            // document.querySelector('.name-placeholder').textContent = '小可爱';
+
+            // 页面可见性变化时，如果隐藏可以暂停某些资源？不需要，但保持运行
+            // 清理函数 (非必须)
+            window.addEventListener('beforeunload', () => {
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                if (launchInterval) clearTimeout(launchInterval);
+            });
+
+            // 在微信内，有时需要触摸才能播放，但我们没有音频，无需担心
+            // 为防止iOS上canvas模糊，已通过resize处理
+
+            // 额外效果：点击屏幕任意位置可以重新绽放几个烟花（增加互动趣味）
+            // 注意：content层pointer-events: none; 需要让点击穿透到canvas？但canvas设置了pointer-events: none;
+            // 所以点击会穿透到body。为了简单，我们允许点击body添加烟花，但会与自动停止冲突。
+            // 为了不影响既定流程，我们不做点击烟花，保持纯净体验。
+            // 如果你希望点击添加烟花，可以修改canvas pointer-events: auto; 并添加监听，但会干扰自动停止逻辑。
+            // 当前保持自动流程，烟花结束展示文字。
+        })();
+    </script>
+</body>
+</html>
